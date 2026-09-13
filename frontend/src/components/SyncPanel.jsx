@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { triggerSync } from "../api";
+import { triggerSync } from "../../api";
 
 export default function SyncPanel({ windows, sync, onSynced }) {
   const [selectedId, setSelectedId] = useState(null);

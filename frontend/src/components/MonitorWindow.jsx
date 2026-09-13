@@ -1,7 +1,7 @@
 import { useState } from "react";
 import AddMediaForm from "./AddMediaForm";
-import { formatTimecode } from "../format";
-import { removeMedia, renameWindow, deleteWindow } from "../api";
+import { formatTimecode } from "../../format";
+import { removeMedia, renameWindow, deleteWindow } from "../../api";
 
 export default function MonitorWindow({ win, onChanged }) {
   const [addingMedia, setAddingMedia] = useState(false);

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getState } from "./api";
+import { getState } from "../api";
 import MonitorWindow from "./components/MonitorWindow";
 import AddWindowForm from "./components/AddWindowForm";
 import SyncPanel from "./components/SyncPanel";
