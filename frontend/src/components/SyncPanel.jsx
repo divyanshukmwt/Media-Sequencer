@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { triggerSync } from "../../api";
+import { useEffect, useState } from "react";
+import { triggerSync } from "../api";
 
 export default function SyncPanel({ windows, sync, onSynced }) {
   const [selectedId, setSelectedId] = useState(null);
@@ -10,6 +10,11 @@ export default function SyncPanel({ windows, sync, onSynced }) {
   const allMedia = windows.flatMap((w) =>
     w.playlist.map((m) => ({ ...m, windowName: w.name }))
   );
+  useEffect(() => {
+    if (selectedId && !allMedia.some((m) => m.id === selectedId)) {
+      setSelectedId(null);
+    }
+  }, [windows]);
 
   async function handleTake() {
     if (!selectedId) {

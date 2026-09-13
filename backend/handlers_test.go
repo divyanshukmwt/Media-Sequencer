@@ -157,6 +157,82 @@ func TestTriggerSync_UnknownMediaID404s(t *testing.T) {
 	}
 }
 
+func TestRemoveMedia_RemovesJustThatItem(t *testing.T) {
+	h, store := setupTestRouter(t)
+	rec := doRequest(t, h, "DELETE", "/api/windows/window-1/media/m2", nil)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+	win, _ := store.GetWindow(context.Background(), "window-1")
+	if len(win.Playlist) != 2 {
+		t.Fatalf("expected 2 items left after removing m2, got %d", len(win.Playlist))
+	}
+	for _, m := range win.Playlist {
+		if m.ID == "m2" {
+			t.Fatal("m2 should have been removed")
+		}
+	}
+}
+
+func TestRemoveMedia_UnknownWindow404s(t *testing.T) {
+	h, _ := setupTestRouter(t)
+	rec := doRequest(t, h, "DELETE", "/api/windows/does-not-exist/media/m2", nil)
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("expected 404, got %d", rec.Code)
+	}
+}
+
+func TestRenameWindow(t *testing.T) {
+	h, store := setupTestRouter(t)
+	rec := doRequest(t, h, "PATCH", "/api/windows/window-1", renameWindowRequest{Name: "Lobby Display"})
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+	win, _ := store.GetWindow(context.Background(), "window-1")
+	if win.Name != "Lobby Display" {
+		t.Fatalf("expected renamed window, got %q", win.Name)
+	}
+}
+
+func TestRenameWindow_RejectsEmptyName(t *testing.T) {
+	h, _ := setupTestRouter(t)
+	rec := doRequest(t, h, "PATCH", "/api/windows/window-1", renameWindowRequest{Name: "  "})
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d", rec.Code)
+	}
+}
+
+func TestRenameWindow_UnknownWindow404s(t *testing.T) {
+	h, _ := setupTestRouter(t)
+	rec := doRequest(t, h, "PATCH", "/api/windows/does-not-exist", renameWindowRequest{Name: "X"})
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("expected 404, got %d", rec.Code)
+	}
+}
+
+func TestDeleteWindow(t *testing.T) {
+	h, store := setupTestRouter(t)
+	rec := doRequest(t, h, "DELETE", "/api/windows/window-2", nil)
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("expected 204, got %d: %s", rec.Code, rec.Body.String())
+	}
+	if _, err := store.GetWindow(context.Background(), "window-2"); err != ErrNotFound {
+		t.Fatalf("expected window-2 to be gone, got err=%v", err)
+	}
+	windows, _ := store.ListWindows(context.Background())
+	if len(windows) != 1 {
+		t.Fatalf("expected 1 window left, got %d", len(windows))
+	}
+}
+
+func TestDeleteWindow_UnknownWindow404s(t *testing.T) {
+	h, _ := setupTestRouter(t)
+	rec := doRequest(t, h, "DELETE", "/api/windows/does-not-exist", nil)
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("expected 404, got %d", rec.Code)
+	}
+}
+
 func TestCreateWindow(t *testing.T) {
 	h, _ := setupTestRouter(t)
 	rec := doRequest(t, h, "POST", "/api/windows", createWindowRequest{Name: "Window 3"})

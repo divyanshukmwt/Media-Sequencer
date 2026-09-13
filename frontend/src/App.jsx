@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getState } from "../api";
+import { getState } from "./api";
 import MonitorWindow from "./components/MonitorWindow";
 import AddWindowForm from "./components/AddWindowForm";
 import SyncPanel from "./components/SyncPanel";
@@ -55,7 +55,7 @@ export default function App() {
         <>
           <div className="monitor-grid">
             {state.windows.map((win) => (
-              <MonitorWindow key={win.window_id} win={win} onPlaylistChanged={fetchState} />
+              <MonitorWindow key={win.window_id} win={win} onChanged={fetchState} />
             ))}
             <AddWindowForm onCreated={fetchState} />
           </div>

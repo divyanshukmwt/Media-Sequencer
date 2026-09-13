@@ -17,6 +17,9 @@ type Store interface {
 	GetWindow(ctx context.Context, id string) (*Window, error)
 	CreateWindow(ctx context.Context, w Window) error
 	AddMedia(ctx context.Context, windowID string, item MediaItem) (*Window, error)
+	RemoveMedia(ctx context.Context, windowID string, mediaID string) (*Window, error)
+	RenameWindow(ctx context.Context, windowID string, name string) (*Window, error)
+	DeleteWindow(ctx context.Context, windowID string) error
 	FindMediaByID(ctx context.Context, mediaID string) (*MediaItem, error)
 	GetSyncState(ctx context.Context) (SyncState, error)
 	SetSyncState(ctx context.Context, s SyncState) error
@@ -109,6 +112,52 @@ func (s *MongoStore) AddMedia(ctx context.Context, windowID string, item MediaIt
 		return nil, err
 	}
 	return &w, nil
+}
+
+func (s *MongoStore) RemoveMedia(ctx context.Context, windowID string, mediaID string) (*Window, error) {
+	filter := bson.M{"_id": windowID}
+	update := bson.M{
+		"$pull": bson.M{"playlist": bson.M{"id": mediaID}},
+		"$set":  bson.M{"updated_at": time.Now().UTC()},
+	}
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
+	var w Window
+	err := s.windows.FindOneAndUpdate(ctx, filter, update, opts).Decode(&w)
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &w, nil
+}
+
+func (s *MongoStore) RenameWindow(ctx context.Context, windowID string, name string) (*Window, error) {
+	filter := bson.M{"_id": windowID}
+	update := bson.M{
+		"$set": bson.M{"name": name, "updated_at": time.Now().UTC()},
+	}
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
+	var w Window
+	err := s.windows.FindOneAndUpdate(ctx, filter, update, opts).Decode(&w)
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &w, nil
+}
+
+func (s *MongoStore) DeleteWindow(ctx context.Context, windowID string) error {
+	res, err := s.windows.DeleteOne(ctx, bson.M{"_id": windowID})
+	if err != nil {
+		return err
+	}
+	if res.DeletedCount == 0 {
+		return ErrNotFound
+	}
+	return nil
 }
 
 func (s *MongoStore) FindMediaByID(ctx context.Context, mediaID string) (*MediaItem, error) {

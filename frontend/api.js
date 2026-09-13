@@ -40,6 +40,26 @@ export function addMedia(windowId, media) {
   });
 }
 
+export function removeMedia(windowId, mediaId) {
+  return request(
+    `/api/windows/${encodeURIComponent(windowId)}/media/${encodeURIComponent(mediaId)}`,
+    { method: "DELETE" }
+  );
+}
+
+export function renameWindow(windowId, name) {
+  return request(`/api/windows/${encodeURIComponent(windowId)}`, {
+    method: "PATCH",
+    body: JSON.stringify({ name }),
+  });
+}
+
+export function deleteWindow(windowId) {
+  return request(`/api/windows/${encodeURIComponent(windowId)}`, {
+    method: "DELETE",
+  });
+}
+
 export function triggerSync(mediaId, durationSeconds) {
   return request("/api/sync", {
     method: "POST",

@@ -57,6 +57,46 @@ func (f *fakeStore) AddMedia(ctx context.Context, windowID string, item MediaIte
 	return &w, nil
 }
 
+func (f *fakeStore) RemoveMedia(ctx context.Context, windowID string, mediaID string) (*Window, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	w, ok := f.windows[windowID]
+	if !ok {
+		return nil, ErrNotFound
+	}
+	filtered := make([]MediaItem, 0, len(w.Playlist))
+	for _, m := range w.Playlist {
+		if m.ID != mediaID {
+			filtered = append(filtered, m)
+		}
+	}
+	w.Playlist = filtered
+	f.windows[windowID] = w
+	return &w, nil
+}
+
+func (f *fakeStore) RenameWindow(ctx context.Context, windowID string, name string) (*Window, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	w, ok := f.windows[windowID]
+	if !ok {
+		return nil, ErrNotFound
+	}
+	w.Name = name
+	f.windows[windowID] = w
+	return &w, nil
+}
+
+func (f *fakeStore) DeleteWindow(ctx context.Context, windowID string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if _, ok := f.windows[windowID]; !ok {
+		return ErrNotFound
+	}
+	delete(f.windows, windowID)
+	return nil
+}
+
 func (f *fakeStore) FindMediaByID(ctx context.Context, mediaID string) (*MediaItem, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()

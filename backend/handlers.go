@@ -227,6 +227,69 @@ func (a *API) addMedia(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, win)
 }
 
+func (a *API) removeMedia(w http.ResponseWriter, r *http.Request) {
+	windowID := r.PathValue("id")
+	mediaID := r.PathValue("mediaId")
+
+	win, err := a.store.RemoveMedia(r.Context(), windowID, mediaID)
+	if errors.Is(err, ErrNotFound) {
+		writeError(w, http.StatusNotFound, "window not found")
+		return
+	}
+	if err != nil {
+		log.Printf("removeMedia: %v", err)
+		writeError(w, http.StatusInternalServerError, "failed to remove media")
+		return
+	}
+	writeJSON(w, http.StatusOK, win)
+}
+
+type renameWindowRequest struct {
+	Name string `json:"name"`
+}
+
+func (a *API) renameWindow(w http.ResponseWriter, r *http.Request) {
+	windowID := r.PathValue("id")
+	var req renameWindowRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid JSON body")
+		return
+	}
+	req.Name = strings.TrimSpace(req.Name)
+	if req.Name == "" {
+		writeError(w, http.StatusBadRequest, "name is required")
+		return
+	}
+
+	win, err := a.store.RenameWindow(r.Context(), windowID, req.Name)
+	if errors.Is(err, ErrNotFound) {
+		writeError(w, http.StatusNotFound, "window not found")
+		return
+	}
+	if err != nil {
+		log.Printf("renameWindow: %v", err)
+		writeError(w, http.StatusInternalServerError, "failed to rename window")
+		return
+	}
+	writeJSON(w, http.StatusOK, win)
+}
+
+
+func (a *API) deleteWindow(w http.ResponseWriter, r *http.Request) {
+	windowID := r.PathValue("id")
+	err := a.store.DeleteWindow(r.Context(), windowID)
+	if errors.Is(err, ErrNotFound) {
+		writeError(w, http.StatusNotFound, "window not found")
+		return
+	}
+	if err != nil {
+		log.Printf("deleteWindow: %v", err)
+		writeError(w, http.StatusInternalServerError, "failed to delete window")
+		return
+	}
+	writeJSON(w, http.StatusNoContent, nil)
+}
+
 
 func (a *API) getSync(w http.ResponseWriter, r *http.Request) {
 	now := time.Now().UTC()
@@ -307,7 +370,10 @@ func NewRouter(a *API, frontendOrigin string) http.Handler {
 	mux.HandleFunc("GET /api/windows", a.listWindows)
 	mux.HandleFunc("POST /api/windows", a.createWindow)
 	mux.HandleFunc("GET /api/windows/{id}", a.getWindow)
+	mux.HandleFunc("PATCH /api/windows/{id}", a.renameWindow)
+	mux.HandleFunc("DELETE /api/windows/{id}", a.deleteWindow)
 	mux.HandleFunc("POST /api/windows/{id}/media", a.addMedia)
+	mux.HandleFunc("DELETE /api/windows/{id}/media/{mediaId}", a.removeMedia)
 	mux.HandleFunc("GET /api/sync", a.getSync)
 	mux.HandleFunc("POST /api/sync", a.triggerSync)
 
@@ -317,7 +383,7 @@ func NewRouter(a *API, frontendOrigin string) http.Handler {
 func withCORS(next http.Handler, origin string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", origin)
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)
