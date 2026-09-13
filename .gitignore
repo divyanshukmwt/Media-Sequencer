@@ -1,0 +1,14 @@
+# Backend
+backend/.env
+backend/mediasequencer
+backend/*.exe
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
