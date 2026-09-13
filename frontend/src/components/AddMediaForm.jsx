@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { addMedia } from "../api";
+import { addMedia } from "../../api";
 
 const TYPE_DEFAULTS = {
   image: 5,

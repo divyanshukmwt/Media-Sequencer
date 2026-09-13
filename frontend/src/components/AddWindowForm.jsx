@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createWindow } from "../api";
+import { createWindow } from "../../api";
 
 export default function AddWindowForm({ onCreated }) {
   const [name, setName] = useState("");

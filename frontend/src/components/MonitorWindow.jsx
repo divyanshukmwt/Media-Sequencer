@@ -1,6 +1,6 @@
 import { useState } from "react";
 import AddMediaForm from "./AddMediaForm";
-import { formatTimecode } from "../format";
+import { formatTimecode } from "../../format";
 
 export default function MonitorWindow({ win, onPlaylistChanged }) {
   const [addingMedia, setAddingMedia] = useState(false);
